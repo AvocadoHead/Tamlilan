@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <title>תמלול דיבור בזמן אמת</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Heebo', 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #e0e0e0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 30px;
+            margin: 10px;
+            transition: background-color 0.3s;
+            height: 50px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #transcript {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            width: 100%;
+            height: 200px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            white-space: pre-wrap;
+            font-size: 18px;
+            line-height: 1.5;
+            text-align: right;
+            direction: rtl;
+        }
+        .buttons-container {
+            margin-top: 10px;
+        }
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .social-icons {
+            display: flex;
+            gap: 10px;
+        }
+        .social-icons a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 24px;
+        }
+        .contact-info {
+            margin-top: 5px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            text-align: center;
+        }
+        .contact-info a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-size: 20px;">תמלול דיבור בזמן אמת</h1>
+        <button id="start">התחל תמלול</button>
+        <button id="stop" disabled>עצור תמלול</button>
+        <div class="buttons-container">
+            <button onclick="clearText()" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">Clear</button>
+            <button onclick="setDirection('rtl')" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">RTL</button>
+            <button onclick="setDirection('ltr')" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">LTR</button>
+            <button onclick="copyText()" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">Copy</button>
+        </div>
+        <div id="transcript" contenteditable="true" dir="rtl"></div>
+    </div>
+
+    <div class="footer">
+        <div class="social-icons">
+            <a href="https://avocadohead.github.io/Eyal-Izenman-Portfolio/" target="_blank" class="profile-logo">
+                <i class="fas fa-user-circle"></i>
+            </a>
+            <a href="https://www.facebook.com/Eyal.Izenman/" target="_blank">
+                <i class="fab fa-facebook"></i>
+            </a>
+            <a href="https://www.instagram.com/ei.sense" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://www.linkedin.com/in/eyal-izenman-37a0471b/" target="_blank">
+                <i class="fab fa-linkedin"></i>
+            </a>
+            <a href="https://buymeacoffee.com/Optopia" target="_blank">
+                <i class="fas fa-coffee"></i>
+            </a>
+            <a href="https://www.hollo.co.il/?section=9&customer=14908" target="_blank">
+                <i class="fas fa-tshirt"></i>
+            </a>
+        </div>
+        <div class="contact-info">
+            <a href="mailto:Eyalizenman@Gmail.com">Eyalizenman@Gmail.com</a><br />
+            <a href="tel:+97236030603">WhatsApp: +972 3 6030603</a>
+        </div>
+    </div>
+
+    <script>
+        let recognizing = false;
+        let recognition;
+        let finalText = '';
+
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('הדפדפן שלך אינו תומך בתמלול דיבור.');
+        } else {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'he-IL';
+
+            recognition.onstart = function() {
+                recognizing = true;
+                document.getElementById('start').disabled = true;
+                document.getElementById('stop').disabled = false;
+            };
+
+            recognition.onerror = function(event) {
+                console.error('שגיאה בזיהוי דיבור:', event.error);
+            };
+
+            recognition.onend = function() {
+                recognizing = false;
+                document.getElementById('start').disabled = false;
+                document.getElementById('stop').disabled = true;
+            };
+
+            recognition.onresult = function(event) {
+                let interimText = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    let currentText = event.results[i][0].transcript;
+
+                    // החלפת מילות פקודה בסימנים
+                    currentText = currentText.replace(/סימן קריאה/g, '!');
+                    currentText = currentText.replace(/נקודה/g, '.');
+                    currentText = currentText.replace(/פסיק/g, ',');
+                    currentText = currentText.replace(/שורה חדשה/g, '\n');
+                    currentText = currentText.replace(/סימן שאלה/g, '?');
+                    currentText = currentText.replace(/מרכאות/g, '"');
+                    currentText = currentText.replace(/מקף/g, '-');
+                    currentText = currentText.replace(/נקודותיים/g, ':');
+
+                    // מחיקת מילה אחרונה כאשר אומרים 'erase' או 'מחק'
+                    if (currentText.includes('erase') || currentText.includes('מחק')) {
+                        finalText = finalText.trim().split(' ').slice(0, -1).join(' ') + ' ';
+                        currentText = currentText.replace(/erase|מחק/g, '');
+                    }
+
+                    if (event.results[i].isFinal) {
+                        finalText += currentText;
+                    } else {
+                        interimText += currentText;
+                    }
+                }
+
+                // הצגת תוצאות ביניים יחד עם תוצאה סופית בלבד
+                document.getElementById('transcript').innerText = finalText + interimText;
+            };
+        }
+
+        document.getElementById('start').onclick = function() {
+            if (!recognizing) {
+                recognition.start();
+            }
+        };
+
+        document.getElementById('stop').onclick = function() {
+            if (recognizing) {
+                recognition.stop();
+            }
+        };
+        function setDirection(direction) {
+            const transcript = document.getElementById('transcript');
+            transcript.style.direction = direction;
+            transcript.style.textAlign = direction === 'rtl' ? 'right' : 'left';
+            transcript.focus();
+        }
+        function copyText() {
+            const transcript = document.getElementById('transcript');
+            const range = document.createRange();
+            range.selectNodeContents(transcript);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand('copy');
+            selection.removeAllRanges();
+        }
+        function clearText() {
+        document.getElementById('transcript').innerText = '';
+    }
+</script>
+</body>
+</html>
