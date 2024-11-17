@@ -26,6 +26,10 @@
             width: 90%;
             max-width: 500px;
         }
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
         button {
             background-color: #007bff;
             color: white;
@@ -99,8 +103,10 @@
 <body>
     <div class="container">
         <h1 style="font-size: 20px;">תמלול דיבור בזמן אמת</h1>
-        <button id="start">התחל תמלול</button>
-        <button id="stop" disabled>עצור תמלול</button>
+        <div class="button-row">
+            <button id="start">התחל תמלול</button>
+            <button id="stop" disabled>עצור תמלול</button>
+        </div>
         <div class="buttons-container">
             <button onclick="clearText()" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">Clear</button>
             <button onclick="setDirection('rtl')" style="font-size: 12px; padding: 5px 10px; border-radius: 15px;">RTL</button>
@@ -170,17 +176,17 @@
                 let interimText = '';
 
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    let currentText = event.results[i][0].transcript;
+                    let currentText = event.results[i][0].transcript.trim();
 
-                    // החלפת מילות פקודה בסימנים
-                    currentText = currentText.replace(/סימן קריאה/g, '!');
-                    currentText = currentText.replace(/נקודה/g, '.');
-                    currentText = currentText.replace(/פסיק/g, ',');
-                    currentText = currentText.replace(/שורה חדשה/g, '\n');
-                    currentText = currentText.replace(/סימן שאלה/g, '?');
-                    currentText = currentText.replace(/מרכאות/g, '"');
-                    currentText = currentText.replace(/מקף/g, '-');
-                    currentText = currentText.replace(/נקודותיים/g, ':');
+                    // החלפת מילות פקודה בסימנים ללא רווח לפני הסימן
+                    currentText = currentText.replace(/\s*סימן קריאה/g, '!');
+                    currentText = currentText.replace(/\s*נקודה/g, '.');
+                    currentText = currentText.replace(/\s*פסיק/g, ',');
+                    currentText = currentText.replace(/\s*שורה חדשה/g, '\n');
+                    currentText = currentText.replace(/\s*סימן שאלה/g, '?');
+                    currentText = currentText.replace(/\s*מרכאות/g, '"');
+                    currentText = currentText.replace(/\s*מקף/g, '-');
+                    currentText = currentText.replace(/\s*נקודותיים/g, ':');
 
                     // מחיקת מילה אחרונה כאשר אומרים 'erase' או 'מחק'
                     if (currentText.includes('erase') || currentText.includes('מחק')) {
@@ -228,8 +234,8 @@
             selection.removeAllRanges();
         }
         function clearText() {
-        document.getElementById('transcript').innerText = '';
-    }
-</script>
+            document.getElementById('transcript').innerText = '';
+        }
+    </script>
 </body>
 </html>
